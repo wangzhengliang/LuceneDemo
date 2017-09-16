@@ -21,13 +21,16 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.NumericRangeQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 import org.junit.Test;
+import org.wltea.analyzer.lucene.IKAnalyzer;
 
 import com.study.dao.ItemsDao;
 import com.study.dao.impl.ItemsDaoImpl;
@@ -69,7 +72,9 @@ public class LuceneDemoTest {
 		}
 		
 		//创建分词器   标准分词器
-		Analyzer analyzer = new StandardAnalyzer();
+		//Analyzer analyzer = new StandardAnalyzer();
+		
+		Analyzer analyzer = new IKAnalyzer();
 		
 		//创建IndexWriter
 	    IndexWriterConfig indexWriterConfig = new IndexWriterConfig(Version.LUCENE_4_10_3, analyzer);
@@ -187,7 +192,60 @@ public class LuceneDemoTest {
 		//writer.deleteDocuments(new Term("id","1"));
 		
 		writer.deleteAll();
-		
-		
 	}
+	
+	/**
+	 * term精确查询
+	 * @throws ParseException
+	 * @throws IOException
+	 */
+	@Test
+	public void termQuery() throws ParseException, IOException{
+		Query query = new TermQuery(new Term("detail","汪正良"));
+		doSearcher(query);
+	}
+	
+	/**
+	 * 数字范围查询
+	 * @throws ParseException
+	 * @throws IOException
+	 */
+	@Test
+	public void numericRangeQuery() throws ParseException, IOException{
+		Query query = NumericRangeQuery.newDoubleRange("price", 1000.0, 3000.0, false, false);
+		doSearcher(query);
+	}
+	
+	
+	/**
+	 * 搜索
+	 * @param queryFile 搜索域
+	 * @param queryDesc 搜索描述
+	 * @throws ParseException 
+	 * @throws IOException 
+	 */
+	public void doSearcher(Query query) throws ParseException, IOException{
+		IndexSearcher searcher = new IndexSearcher(DirectoryReader.open(FSDirectory.open(new File("G:\\luceneDemoIndexFile"))));
+		
+		TopDocs topDocs = searcher.search(query, 10);
+		
+		System.out.println("实际匹配数量:"+topDocs.totalHits);
+		
+		ScoreDoc[] scoreDocs = topDocs.scoreDocs;
+		
+		for (ScoreDoc scoreDoc : scoreDocs) {
+			System.out.println("==========================");
+			//获取文档Id
+			int docId = scoreDoc.doc;
+			
+			//通过Id获取文档
+			Document doc = searcher.doc(docId);
+			System.out.println("商品Id:"+doc.get("id"));
+			System.out.println("商品name:"+doc.get("name"));
+			System.out.println("商品price:"+doc.get("price"));
+			System.out.println("商品detail:"+doc.get("detail"));
+			System.out.println("商品createTime:"+doc.get("createTime"));
+		}
+	}
+	
 }
