@@ -17,6 +17,7 @@ import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
@@ -164,5 +165,29 @@ public class LuceneDemoTest {
 			writer.addDocument(doc);
 		}
 	    writer.close();
+	}
+	
+	
+	/**
+	 * 删除索引
+	 * 	    不管是创建索引还是删除索引，都是通过IndexWriter完成的
+	 * @throws IOException
+	 */
+	@Test
+	public void testDeleteIndex() throws IOException{
+		
+		Analyzer analyzer = new StandardAnalyzer();
+		
+		IndexWriterConfig indexWriterConfig = new IndexWriterConfig(Version.LUCENE_4_10_3, analyzer);
+		
+		Directory directory = FSDirectory.open(new File("G:\\lucnenDemoIndexFile"));
+		
+		IndexWriter writer = new IndexWriter(directory, indexWriterConfig);
+		
+		//writer.deleteDocuments(new Term("id","1"));
+		
+		writer.deleteAll();
+		
+		
 	}
 }
