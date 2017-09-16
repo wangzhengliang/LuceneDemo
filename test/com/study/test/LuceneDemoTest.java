@@ -8,8 +8,11 @@ import java.util.List;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.DoubleField;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.document.FloatField;
+import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
@@ -118,5 +121,48 @@ public class LuceneDemoTest {
 			System.out.println("商品detail:"+doc.get("detail"));
 			System.out.println("商品createTime:"+doc.get("createTime"));
 		}
+	}
+	
+	
+	/**
+	 * 对testCreateIndex做了一些修改，使之有更加精确的Filed定义
+	 * @throws Exception
+	 */
+	@Test
+	public void testCreateIndexAfter() throws Exception{
+		ItemsDao itemsDao = new ItemsDaoImpl();
+		List<Items> items = itemsDao.queryItems();
+		
+		List<Document> documents = new ArrayList<Document>();
+		Document document;
+		for (Items item : items) {
+			document = new Document();
+			//Sotre:如果是yes，则说明存储到文档域中
+			Field id = new StringField("id",item.getId().toString(),Store.YES);
+			Field name = new TextField("name",item.getName(),Store.YES);
+			Field price = new DoubleField("price",item.getPrice(),Store.YES);
+			Field detail = new TextField("detail",item.getDetail(),Store.YES);
+			Field createTime = new TextField("createTime",item.getCreateTime().toString(),Store.YES);
+			document.add(id);
+			document.add(name);
+			document.add(price);
+			document.add(detail);
+			document.add(createTime);
+			
+			documents.add(document);
+		}
+		
+		//创建分词器   标准分词器
+		Analyzer analyzer = new StandardAnalyzer();
+		
+		//创建IndexWriter
+	    IndexWriterConfig indexWriterConfig = new IndexWriterConfig(Version.LUCENE_4_10_3, analyzer);
+	    File indexFile = new File("G:\\luceneDemoIndexFile");//索引库位置
+	    Directory directory = FSDirectory.open(indexFile);//索引流对象
+	    IndexWriter writer = new IndexWriter(directory,indexWriterConfig);
+	    for (Document doc : documents) {
+			writer.addDocument(doc);
+		}
+	    writer.close();
 	}
 }
