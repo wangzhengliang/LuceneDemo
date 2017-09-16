@@ -11,8 +11,15 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
@@ -71,4 +78,45 @@ public class LuceneDemoTest {
 	    writer.close();
 	}
 	
+	/**
+	 * 索搜索引
+	 * @throws ParseException 
+	 * @throws IOException 
+	 */
+	@Test
+	public void testIndexSearcher() throws ParseException, IOException{
+		//创建query对象
+		//第一个参数：搜索域的名称；第二个参数：和创建索引时使用同一个分词器
+		QueryParser queryParser = new QueryParser("createTime",new StandardAnalyzer());
+		Query query = queryParser.parse("createTime:2015 AND 02");//通过QueryParser创建Query对象
+																  //如果有多个条件，关键词记得都要大写
+		//创建IndexSearcher
+		//指定索引库的位置
+		File indexFile = new File("G:\\luceneDemoIndexFile");
+		Directory directory = FSDirectory.open(indexFile);
+		DirectoryReader reader = DirectoryReader.open(directory);
+		IndexSearcher indexSearcher = new IndexSearcher(reader);
+		
+		//第二个参数：指定返回最佳匹配的十条记录
+		TopDocs topDocs = indexSearcher.search(query, 10);
+		
+		//实际匹配记录数
+		int count = topDocs.totalHits;
+		System.out.println("匹配记录数"+count);
+		
+		ScoreDoc[] scoreDocs = topDocs.scoreDocs;
+		for (ScoreDoc scoreDoc : scoreDocs) {
+			System.out.println("==========================");
+			//获取文档Id
+			int docId = scoreDoc.doc;
+			
+			//通过Id获取文档
+			Document doc = indexSearcher.doc(docId);
+			System.out.println("商品Id:"+doc.get("id"));
+			System.out.println("商品name:"+doc.get("name"));
+			System.out.println("商品price:"+doc.get("price"));
+			System.out.println("商品detail:"+doc.get("detail"));
+			System.out.println("商品createTime:"+doc.get("createTime"));
+		}
+	}
 }
